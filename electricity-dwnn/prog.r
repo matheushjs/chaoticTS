@@ -1,10 +1,19 @@
 require(tseriesChaos);
 
-df = read.csv("../electricity-normalized.csv");
+df = read.csv("../sunspot.csv", header=F, sep=";");
+colnames(df) = c("year", "month", "numdate", "mean", "sd", "samples", "def-or-prov");
 
-# sort dataset by date
-df = df[sort.list(df$date),];
+m = 4;
+d = 34;
 
-# The sampling time is not uniform; we select a region where it is uniform.
-peaks = which(abs(diff(df$date)) > 0.05);
-df = df[(peaks[2]+1):peaks[3],];
+# x1 x2 x3
+# x2 x3 x4 ...
+emb = embedd(df$mean, m=m, d=d);
+
+# Receives the dataset, which is a matrix with rows (x1, x2, x3, y)
+# And receives the query point (x1, x2, x3)
+dwnn = function(dataset, query, sigma=0.5){
+	yIdx = ncol(dataset);
+	squareDist = sum((dataset[,1:(yIdx-1)] - query)**2);
+	weights = exp(-squareDist / (2 * sigma**2));
+}
