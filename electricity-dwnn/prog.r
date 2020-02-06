@@ -27,39 +27,63 @@ report = function(correct, obtained){
 }
 
 
+predict.dwnn = function(df){
+	m = 4;
+	d = 34;
+
+	# x1 x2 x3
+	# x2 x3 x4 ...
+	emb = embedd(df$mean, m=m, d=d);
+
+	beginTest = floor(nrow(emb) * 0.7);
+	train = emb[1:(beginTest-1),];
+	test  = emb[beginTest:nrow(emb),];
+
+	# Predict without replacement
+	#sigmaSeq = seq(0.01, 0.5, length=100);
+	#rmseVal = rep(0, length(sigmaSeq));
+	#plot(sigmaSeq, rep(-1, length(sigmaSeq)), ylim=c(0, 100), cex=0);
+	#for(i in seq_along(sigmaSeq)){
+	#	Y = dwnn(train, test[,1:(m-1)], sigma=sigmaSeq[i]);
+	#	squares = (test[,m] - Y)**2
+	#	naCount = sum(is.na(squares));
+	#	rmse = sqrt(mean(squares[!is.na(squares)]));
+	#	rmseVal[i] = rmse;
+	#	points(sigmaSeq[i], rmse, col=2, pch=19);
+	#}
+	#savePlot("rmse_by_sigma.png");
+	#barplot(diff(rmseVal), type="l", names.arg=round(sigmaSeq[2:length(sigmaSeq)], 2));
+	#savePlot("diff_barplot.png");
+	#locator(1);
+
+	Y = dwnn(train, test[,1:(m-1)], sigma=0.19);
+	plot(test[,m], type="l");
+	lines(Y, col=2);
+	report(test[,m], Y);
+	savePlot("dwnn-no-replacement.png");
+
+	# Predict with replacement
+	buffer = matrix(0, ncol=m, nrow=nrow(test));
+	buffer[1,] = test[1,];
+	buffer[1,m] = dwnn(train, test[1,1:(m-1)], sigma=0.19);
+	for(i in 2:nrow(test)){
+		query = buffer[i-1,2:m];
+		y = dwnn(train, query, sigma=0.19);
+		buffer[i,] = c(query, y);
+	}
+
+	plot(test[,m], type="l");
+	lines(buffer[,m], col=2);
+	report(test[,m], buffer[,m]);
+	savePlot("dwnn-with-replacement.png");
+}
+
+predict.arima = function(df){
+	
+}
+
 df = read.csv("../sunspot.csv", header=F, sep=";");
 colnames(df) = c("year", "month", "numdate", "mean", "sd", "samples", "def-or-prov");
 
-m = 4;
-d = 34;
-
-# x1 x2 x3
-# x2 x3 x4 ...
-emb = embedd(df$mean, m=m, d=d);
-
-beginTest = floor(nrow(emb) * 0.7);
-train = emb[1:(beginTest-1),];
-test  = emb[beginTest:nrow(emb),];
-
-# Predict without replacement
-Y = dwnn(train, test[,1:(m-1)], sigma=0.5);
-
-plot(test[,m], type="l");
-lines(Y, col=2);
-report(test[,m], Y);
-savePlot("dwnn-no-replacement.png");
-
-# Predict with replacement
-buffer = matrix(0, ncol=m, nrow=nrow(test));
-buffer[1,] = test[1,];
-buffer[1,m] = dwnn(train, test[1,1:(m-1)]);
-for(i in 2:nrow(test)){
-	query = buffer[i-1,2:m];
-	y = dwnn(train, query);
-	buffer[i,] = c(query, y);
-}
-
-plot(test[,m], type="l");
-lines(buffer[,m], col=2);
-report(test[,m], buffer[,m]);
-savePlot("dwnn-with-replacement.png");
+# predict.dwnn(df);
+predict.arima(df);
