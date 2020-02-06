@@ -1,4 +1,5 @@
 require(tseriesChaos);
+require(forecast);
 
 # Receives the dataset, which is a matrix with rows (x1, x2, x3, y)
 # And receives the query point (x1, x2, x3)
@@ -27,7 +28,7 @@ report = function(correct, obtained){
 }
 
 
-predict.dwnn = function(df){
+predict.dwnn = function(df, train.size=0.7){
 	m = 4;
 	d = 34;
 
@@ -35,7 +36,7 @@ predict.dwnn = function(df){
 	# x2 x3 x4 ...
 	emb = embedd(df$mean, m=m, d=d);
 
-	beginTest = floor(nrow(emb) * 0.7);
+	beginTest = floor(nrow(emb) * train.size);
 	train = emb[1:(beginTest-1),];
 	test  = emb[beginTest:nrow(emb),];
 
@@ -78,12 +79,38 @@ predict.dwnn = function(df){
 	savePlot("dwnn-with-replacement.png");
 }
 
-predict.arima = function(df){
+predict.arima = function(df, train.size=0.7){
+	beginTest = floor(length(df$mean) * train.size);
+	train = df$mean[1:(beginTest-1)];
+	test  = df$mean[beginTest:length(df$mean)];
 	
+	model = auto.arima(train);
+	Y = predict(model, n.ahead=length(test));
+	pred = Y$pred;
+	se   = Y$se; # standard errors
+
+	plot(test, type="l");
+	lines(as.numeric(pred), col=2);
+	savePlot("autoarima-onetime-prediction.png");
+
+	predictions = c();
+	for(i in 1:300){
+		cat("Progress [Retrained ARIMA]:", i, "\n");
+		model = auto.arima(train);
+		Y = predict(model, n.ahead=1);
+		pred = Y$pred[1];
+		se   = Y$se; # standard errors
+		predictions = c(predictions, pred);
+		train = c(train, pred);
+	}
+
+	plot(test[1:300], type="l");
+	lines(1:300, predictions, col=2);
+	savePlot("autoarima-retrained-prediction.png");
 }
 
 df = read.csv("../sunspot.csv", header=F, sep=";");
 colnames(df) = c("year", "month", "numdate", "mean", "sd", "samples", "def-or-prov");
 
 # predict.dwnn(df);
-predict.arima(df);
+# predict.arima(df);
