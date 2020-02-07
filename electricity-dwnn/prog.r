@@ -1,5 +1,6 @@
 require(tseriesChaos);
 require(forecast);
+require(rnn);
 
 # Receives the dataset, which is a matrix with rows (x1, x2, x3, y)
 # And receives the query point (x1, x2, x3)
@@ -109,8 +110,61 @@ predict.arima = function(df, train.size=0.7){
 	savePlot("autoarima-retrained-prediction.png");
 }
 
+predict.chaotic.rnn = function(df, train.size=0.7){
+	m = 4;
+	d = 34;
+
+	# Unfortunately we will have to normalize the time series this time\
+	df$mean = df$mean / (max(df$mean) * 1.2);
+
+	# x1 x2 x3
+	# x2 x3 x4 ...
+	emb = embedd(df$mean, m=m, d=d);
+	X = emb[,1:(m-1)];
+	Y = emb[,m];
+
+	# Convert to array as desired by the `rnn` package
+	X = array(X, dim=c(dim(X), 1));
+	Y = array(Y, dim=c(length(Y), 1));
+
+	# Separate in train / test
+	beginTest = floor(nrow(emb) * train.size);
+	trainX = X[1:(beginTest-1),,,drop=F];
+	trainY = Y[1:(beginTest-1),,drop=F];
+	testX  = X[beginTest:nrow(emb),,,drop=F];
+	testY  = Y[beginTest:nrow(emb),,drop=F];
+
+	model <- trainr(Y=trainY,
+		X=trainX,
+		learningrate   = 0.08,
+		hidden_dim     = 30,
+		batch_size     = 100,
+		numepochs      = 100,
+		seq_to_seq_unsync=TRUE);
+	
+	# For m=8, d=34
+#	model <- trainr(Y=trainY,
+#		X=trainX,
+#		learningrate   = 0.06,
+#		hidden_dim     = 30,
+#		batch_size     = 100,
+#		numepochs      = 100,
+#		seq_to_seq_unsync=TRUE);
+
+	# predict
+	preds <- predictr(model, testX);
+
+	plot(testY, type="l");
+	lines(preds[,1], col=2);
+	report(testY, preds[,1]);
+	savePlot("chaotic-rnn.png");
+}
+
+
+
 df = read.csv("../sunspot.csv", header=F, sep=";");
 colnames(df) = c("year", "month", "numdate", "mean", "sd", "samples", "def-or-prov");
 
 # predict.dwnn(df);
 # predict.arima(df);
+predict.chaotic.rnn(df);
