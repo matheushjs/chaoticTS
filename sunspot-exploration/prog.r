@@ -136,19 +136,20 @@ predict.chaotic.rnn = function(df, train.size=0.7){
 
 	model <- trainr(Y=trainY,
 		X=trainX,
-		learningrate   = 0.08,
+		learningrate   = 0.04,
 		hidden_dim     = 30,
 		batch_size     = 100,
-		numepochs      = 100,
+		numepochs      = 1000,
+		momentum       = 0.1,
 		seq_to_seq_unsync=TRUE);
 	
-	# For m=8, d=34
+	# For m=8, d=17
 #	model <- trainr(Y=trainY,
 #		X=trainX,
 #		learningrate   = 0.06,
 #		hidden_dim     = 30,
 #		batch_size     = 100,
-#		numepochs      = 100,
+#		numepochs      = 1000,
 #		seq_to_seq_unsync=TRUE);
 
 	# predict
