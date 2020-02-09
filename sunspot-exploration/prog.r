@@ -1,6 +1,7 @@
 require(tseriesChaos);
 require(forecast);
 require(rnn);
+require(nnet);
 
 # Receives the dataset, which is a matrix with rows (x1, x2, x3, y)
 # And receives the query point (x1, x2, x3)
@@ -59,7 +60,7 @@ predict.dwnn = function(df, train.size=0.7){
 	#locator(1);
 
 	Y = dwnn(train, test[,1:(m-1)], sigma=0.19);
-	plot(test[,m], type="l");
+	plot(test[,m], type="l", xlab="Time", ylab="Sunspots");
 	lines(Y, col=2);
 	report(test[,m], Y);
 	savePlot("dwnn-no-replacement.png");
@@ -74,7 +75,7 @@ predict.dwnn = function(df, train.size=0.7){
 		buffer[i,] = c(query, y);
 	}
 
-	plot(test[,m], type="l");
+	plot(test[,m], type="l", xlab="Time", ylab="Sunspots");
 	lines(buffer[,m], col=2);
 	report(test[,m], buffer[,m]);
 	savePlot("dwnn-with-replacement.png");
@@ -111,8 +112,8 @@ predict.arima = function(df, train.size=0.7){
 }
 
 predict.chaotic.rnn = function(df, train.size=0.7){
-	m = 4;
-	d = 34;
+	m = 8;
+	d = 17;
 
 	# Unfortunately we will have to normalize the time series this time\
 	df$mean = df$mean / (max(df$mean) * 1.2);
@@ -136,14 +137,15 @@ predict.chaotic.rnn = function(df, train.size=0.7){
 
 	model <- trainr(Y=trainY,
 		X=trainX,
-		learningrate   = 0.04,
+		# learningrate   = 0.04, # For m=4, d=34
+		learningrate   = 0.04,   # For m=8, d=17
 		hidden_dim     = 30,
 		batch_size     = 100,
 		numepochs      = 1000,
 		momentum       = 0.1,
+		use_bias       = TRUE,
 		seq_to_seq_unsync=TRUE);
 	
-	# For m=8, d=17
 #	model <- trainr(Y=trainY,
 #		X=trainX,
 #		learningrate   = 0.06,
@@ -155,17 +157,50 @@ predict.chaotic.rnn = function(df, train.size=0.7){
 	# predict
 	preds <- predictr(model, testX);
 
-	plot(testY, type="l");
+	plot(testY, type="l", xlab="Time", ylab="Sunspots");
 	lines(preds[,1], col=2);
 	report(testY, preds[,1]);
 	savePlot("chaotic-rnn.png");
 }
 
+predict.chaotic.fnn = function(df, train.size=0.7){
+	m = 8;
+	d = 17;
 
+	# Unfortunately we will have to normalize the time series this time\
+	df$mean = df$mean / (max(df$mean) * 1.2);
+
+	# x1 x2 x3
+	# x2 x3 x4 ...
+	emb = embedd(df$mean, m=m, d=d);
+	X = emb[,1:(m-1)];
+	Y = emb[,m,drop=F];
+
+	# Separate in train / test
+	beginTest = floor(nrow(emb) * train.size);
+	trainX = X[1:(beginTest-1),];
+	trainY = Y[1:(beginTest-1),,drop=F];
+	testX  = X[beginTest:nrow(emb),];
+	testY  = Y[beginTest:nrow(emb),,drop=F];
+
+	model <- nnet(trainX, trainY, size=60, maxit=10000, linout=T, reltol=1e-20);
+	
+	# predict
+	preds <- predict(model, testX);
+
+	plot(testY[,1], type="l", xlab="Time", ylab="Sunspots");
+	lines(preds[,1], col=2);
+	report(testY[,1], preds[,1]);
+	savePlot("chaotic-fnn.png");
+}
+
+
+dev.new(width=12, height=6);
 
 df = read.csv("../sunspot.csv", header=F, sep=";");
 colnames(df) = c("year", "month", "numdate", "mean", "sd", "samples", "def-or-prov");
 
-# predict.dwnn(df);
-# predict.arima(df);
-predict.chaotic.rnn(df);
+#predict.dwnn(df);
+#predict.arima(df);
+#predict.chaotic.rnn(df);
+predict.chaotic.fnn(df);
