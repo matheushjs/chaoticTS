@@ -112,8 +112,8 @@ predict.arima = function(df, train.size=0.7){
 }
 
 predict.chaotic.rnn = function(df, train.size=0.7){
-	m = 8;
-	d = 17;
+	m = 4;
+	d = 34;
 
 	# Unfortunately we will have to normalize the time series this time\
 	df$mean = df$mean / (max(df$mean) * 1.2);
@@ -137,8 +137,8 @@ predict.chaotic.rnn = function(df, train.size=0.7){
 
 	model <- trainr(Y=trainY,
 		X=trainX,
-		# learningrate   = 0.04, # For m=4, d=34
-		learningrate   = 0.04,   # For m=8, d=17
+		learningrate   = 0.04, # For m=4, d=34
+		# learningrate   = 0.04,   # For m=8, d=17
 		hidden_dim     = 30,
 		batch_size     = 100,
 		numepochs      = 1000,
@@ -202,5 +202,5 @@ colnames(df) = c("year", "month", "numdate", "mean", "sd", "samples", "def-or-pr
 
 #predict.dwnn(df);
 #predict.arima(df);
-#predict.chaotic.rnn(df);
-predict.chaotic.fnn(df);
+predict.chaotic.rnn(df);
+#predict.chaotic.fnn(df);

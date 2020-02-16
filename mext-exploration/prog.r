@@ -59,8 +59,8 @@ predict.dwnn = function(emb, train.size=0.7, tune=F){
 	}
 
 	Y = dwnn(train, test[,1:(m-1)], sigma=bestSigma);
-	plot(test[,m], type="l", xlab="Time", ylab="Sunspots");
-	lines(Y, col=2);
+	plot(test[,m], type="l", xlab="Time", ylab="Sunspots", lwd=3);
+	lines(Y, col=2, lwd=3, lty=3);
 	rmse = report(test[,m], Y);
 	savePlot("dwnn-no-replacement.png");
 	return(rmse);
@@ -100,9 +100,9 @@ predict.chaotic.rnn = function(emb, train.size=0.7){
 
 	model <- trainr(Y=trainY,
 		X=trainX,
-		learningrate   = 0.1,
+		learningrate   = 0.07,
 		# learningrate   = 0.04,   # For m=8, d=17
-		hidden_dim     = 50,
+		hidden_dim     = 18,
 		batch_size     = 100,
 		numepochs      = 200,
 		momentum       = 0.1,
@@ -120,8 +120,8 @@ predict.chaotic.rnn = function(emb, train.size=0.7){
 	# predict
 	preds <- predictr(model, testX);
 
-	plot(testY, type="l", xlab="Time", ylab="Sunspots");
-	lines(preds[,1], col=2);
+	plot(testY, type="l", xlab="Time", ylab="Sunspots", lwd=3);
+	lines(preds[,1], col=2, lwd=3, lty=3);
 	rmse = report(testY, preds[,1]);
 	savePlot("chaotic-rnn.png");
 
