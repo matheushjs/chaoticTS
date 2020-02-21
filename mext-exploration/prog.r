@@ -59,8 +59,8 @@ predict.dwnn = function(emb, train.size=0.7, tune=F){
 	}
 
 	Y = dwnn(train, test[,1:(m-1)], sigma=bestSigma);
-	plot(test[,m], type="l", xlab="Time", ylab="Sunspots", lwd=3);
-	lines(Y, col=2, lwd=3, lty=3);
+	plot(test[,m][1:300], type="l", xlab="Time", ylab="Sunspots", lwd=3);
+	lines(Y[1:300], col=2, lty=2, lwd=3);
 	rmse = report(test[,m], Y);
 	savePlot("dwnn-no-replacement.png");
 	return(rmse);
@@ -129,7 +129,7 @@ predict.chaotic.rnn = function(emb, train.size=0.7){
 }
 
 graphics.off();
-dev.new(width=12, height=6);
+dev.new(width=14, height=6);
 
 df = read.csv("../sunspot.csv", header=F, sep=";");
 colnames(df) = c("year", "month", "numdate", "mean", "sd", "samples", "def-or-prov");
