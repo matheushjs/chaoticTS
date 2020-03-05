@@ -29,7 +29,17 @@ savePlot("logistic-sequence.png");
 
 dev.new(width=10, height=10);
 lorenz.ts <- sim.cont(lorenz.syst, 0, 100, 0.05, start.x=c(5,5,5), parms=c(10, 28, -8/3), obs.fun = function(x) x[1]);
-emb = embedd(lorenz.ts, m=2, d=4)[1:40,];
+emb = embedd(lorenz.ts, m=2, d=4)[1:40 + 90,];
 plot(emb, type="l", xlab="", ylab="");
 points(emb, pch=19, col=grey(seq(0, 0.7, length=nrow(emb))), cex=2.3);
 savePlot("lorenz-sequence.png");
+
+
+dev.new(width=10, height=10);
+N = nrow(emb);
+train = emb[sample(20:(N-1)),];
+test = emb[N,];
+plot(train, type="l", xlab="", ylab="");
+points(train, pch=19, col=grey(seq(0, 0.7, length=nrow(train))), cex=2.3);
+points(test[1], test[2], pch=19, col=4, cex=4);
+savePlot("lorenz-sequence2.png");
