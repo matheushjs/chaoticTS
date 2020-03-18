@@ -51,4 +51,16 @@ idx = start_point;
 points(m$X[idx], m$Z[idx], pch=19, cex=1);
 #savePlot("possible_first_point.png");
 
+
+dev.new(width=10, height=8);
+plot(-10000, -10000, xlim=range(m$X), ylim=range(m$Z));
+
+set.seed(1);
+N_SAMPLES = 1000;
+POINT_IDX = 2;
+start_point = floor(runif(min=1, max=len - POINT_IDX + 1, n=N_SAMPLES));
+idx = start_point;
+points(m$X[idx], m$Z[idx], pch=19, cex=1);
+#savePlot("possible_second_point.png");
+
 set.seed(NULL);
