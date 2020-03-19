@@ -63,4 +63,8 @@ idx = start_point;
 points(m$X[idx], m$Z[idx], pch=19, cex=1);
 #savePlot("possible_second_point.png");
 
+dev.new(width=12, height=6);
+plot(m$X, m$Z, pch=19, cex=0.7, col="#00000033");
+savePlot("possible-states.png");
+
 set.seed(NULL);
