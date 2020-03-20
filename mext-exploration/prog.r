@@ -1,5 +1,6 @@
 require(tseriesChaos);
 require(rnn);
+require(viridis)
 
 # Receives the dataset, which is a matrix with rows (x1, x2, x3, y)
 # And receives the query point (x1, x2, x3)
@@ -60,7 +61,8 @@ predict.dwnn = function(emb, train.size=0.7, tune=F){
 
 	Y = dwnn(train, test[,1:(m-1)], sigma=bestSigma);
 	plot(test[,m][1:300], type="l", xlab="Time", ylab="Sunspots", lwd=3);
-	lines(Y[1:300], col=2, lty=2, lwd=3);
+	points(Y[1:300], col=viridis(5)[4], pch=19, cex=1.2);
+	lines(Y[1:300], col=viridis(5)[4], lwd=3);
 	rmse = report(test[,m], Y);
 	savePlot("dwnn-no-replacement.png");
 	return(rmse);
@@ -153,5 +155,5 @@ emb = embedd(series, lags=c(0,c(4,3,2,1)));
 #emb = cbind(A, prev, B);
 
 rmse1 = predict.dwnn(emb);
-rmse2 = predict.chaotic.rnn(emb);
-print(c(rmse1, rmse2));
+#rmse2 = predict.chaotic.rnn(emb);
+#print(c(rmse1, rmse2));
