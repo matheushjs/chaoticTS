@@ -19,3 +19,13 @@ plotIdx = function(idx){
 
 	plot(all, pch=19, col="#00000033");
 }
+
+dev.new(width=6, height=6);
+plotIdx(1);
+savePlot("lorenz-equidistribution1.png");
+
+dev.new(width=6, height=6);
+plotIdx(10);
+savePlot("lorenz-equidistribution2.png");
+
+graphics.off();
