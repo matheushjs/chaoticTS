@@ -46,3 +46,13 @@ plotAll = function(idx=1){
 		mat[i,] = all[[i]][idx,];
 	plot(mat, pch=19, col="#00000004");
 }
+
+dev.new(width=6, height=6);
+plotAll(1);
+savePlot("synthetic-equidistribution1.png");
+
+dev.new(width=6, height=6);
+plotAll(50);
+savePlot("synthetic-equidistribution2.png");
+
+graphics.off();
