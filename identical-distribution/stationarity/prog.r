@@ -1,5 +1,5 @@
 require(tseriesChaos);
-#require(RTisean);
+require(RTisean);
 
 graphics.off();
 dev.new(width=0.8*12, height=0.8*8);
@@ -43,18 +43,20 @@ divergence.plot = function(data, from=20, to=3996, by=5, shuffle=FALSE, main="")
 	result;
 }
 
-lorenz = function(){
-	#lorenz.ts <<- sim.cont(lorenz.syst, 0, 96000, 0.03,
-	#     start.x=c(5,5,5), parms=c(10, 28, -8/3), obs.fun = function(x)
-	#     x[1]);
-		 #sqrt(sum(x**2)));
+lorenz.ts = NULL;
+lorenz = function(N=10000, t.step=0.03){
+	t.end = N * t.step;
+	lorenz.ts <<- sim.cont(lorenz.syst, 0, t.end, t.step,
+	     start.x=c(5,5,5), parms=c(10, 28, -8/3), obs.fun = function(x)
+	     x[1]);
+	 #sqrt(sum(x**2)));
 
 	m = 9;
 	d = 1;
 	data = embedd(lorenz.ts, m=m, d=d);
 	#data = data[seq(1, nrow(data), by=5),]
 
-	result = divergence.plot(data, to=8*197000, by=8*200, shuffle=F, main=paste("Divergences for the Lorenz Map (non-shuffled, rate 0.03s, m = ", m, ", d = ", d, ")."));
+	result = divergence.plot(data, to=N/2, by=N%/%1000, shuffle=F, main=paste("Divergences for the Lorenz Map (non-shuffled, rate 0.03s, m = ", m, ", d = ", d, ")."));
 
 	range = max(data) - min(data);
 	x = seq(0, max(result[,1]) * 1.1, length=1000);
@@ -99,4 +101,4 @@ logistic.map = function(){
 }
 
 #logistic.map();
-lorenz();
+lorenz(1500000); # 1,500,000 uses up about 60 MB
