@@ -1,5 +1,8 @@
-require(tseriesChaos);
+#require(tseriesChaos);
 require(RTisean);
+
+embedd = tseriesChaos::embedd;
+sim.cont = tseriesChaos::sim.cont;
 
 graphics.off();
 dev.new(width=0.8*12, height=0.8*8);
@@ -43,13 +46,15 @@ divergence.plot = function(data, from=20, to=3996, by=5, shuffle=FALSE, main="")
 	result;
 }
 
-lorenz.ts = NULL;
-lorenz = function(N=10000, t.step=0.03){
+lorenz = function(N=10000, t.step=0.03, recalc=TRUE){
 	t.end = N * t.step;
-	lorenz.ts <<- sim.cont(lorenz.syst, 0, t.end, t.step,
-	     start.x=c(5,5,5), parms=c(10, 28, -8/3), obs.fun = function(x)
-	     x[1]);
-	 #sqrt(sum(x**2)));
+
+	if(recalc){
+		lorenz.ts <<- sim.cont(lorenz.syst, 0, t.end, t.step,
+			 start.x=c(5,5,5), parms=c(10, 28, -8/3), obs.fun = function(x)
+			 x[1]);
+		 #sqrt(sum(x**2)));
+	}
 
 	m = 9;
 	d = 1;
@@ -71,6 +76,7 @@ lorenz = function(N=10000, t.step=0.03){
 	legend("topright", c(expression(eta == 0.1), expression(eta == 0.05), expression(eta == 0.01)), col=c(2, 3, 4), lwd=1)
 
 	savePlot("independence-criterion-lorenz.png");
+	result;
 }
 
 logistic.map = function(){
@@ -101,4 +107,4 @@ logistic.map = function(){
 }
 
 #logistic.map();
-lorenz(1500000); # 1,500,000 uses up about 60 MB
+result = lorenz(150000, recalc=TRUE); # 1,500,000 uses up about 60 MB
