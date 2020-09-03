@@ -11,7 +11,7 @@ if(length(lorenz.ts) == 2001)
 graphics.off();
 dev.new(width=0.8*12, height=0.8*8);
 
-logistic = function(iter=40000, r=3.8){
+logistic = function(iter=40000, r=4){
 	res = rep(0, iter);
 	res[1] = runif(min=0, max=1, n=1);
 	for(i in 2:iter)
@@ -43,16 +43,23 @@ lorenz.embedded = function(N=1000, m=3, d=3, t.step=0.03){
 	data;
 }
 
-norm1 = function(vec){
-	sum(abs(vec));
-}
+norm1 = function(vec){ sum(abs(vec)); }
+norm2 = function(vec){ sqrt(sum(vec**2)); }
+normInf = function(vec){ max(abs(vec)); }
 
-norm2 = function(vec){
-	sqrt(sum(vec**2));
-}
+embedd.custom = function(series, indices){
+	subseries = list();
+	for(l in indices){
+		subseries[[length(subseries) + 1]] = series[l:length(series)];
+	}
 
-normInf = function(vec){
-	max(abs(vec));
+	minLength = length(series) - max(indices);
+	result = NULL;
+	for(i in 1:length(subseries)){
+		result = cbind(result, subseries[[i]][1:minLength] );
+	}
+
+	result;
 }
 
 divergence.plot = function(data, box.x, box.y, box.z, from=20, to=3996, by=5, shuffle=FALSE, smooth=TRUE){
@@ -77,10 +84,10 @@ divergence.plot = function(data, box.x, box.y, box.z, from=20, to=3996, by=5, sh
 		result = rbind(result, c(i, freq1, freq2, abs(freq1 - freq2)));
 	}
 	if(smooth){
-		sm = smooth.spline(result[,1], result[,4], df=30);
-		lines(sm, lwd=2, col="#00007788");
+		sm = smooth.spline(2*result[,1], result[,4], df=30);
+		lines(sm, lwd=2, col="#00007755");
 	} else {
-		lines(result[,1], result[,4], lwd=2, col="#000000AA");
+		lines(2*result[,1], result[,4], lwd=2, col="#000000AA");
 	}
 	result;
 }
@@ -108,7 +115,7 @@ lorenz.single = function(data){
 	box.y = min(yrange) + (c(n-3, n) + 3) * diff(yrange) / 10;
 	box.z = min(zrange) + (c(n-3, n) + 7) * diff(zrange) / 10;
 
-	plot(0, 1, xlab="size of each half", ylab="histogram divergence", type="l", xlim=c(0, N/2), ylim=c(1e-5, 1), log="y",
+	plot(0, 1, xlab="Sample size", ylab=expression(paste(list(histogram,divergence), phantom(aaa), epsilon, phantom(aaa))), type="l", xlim=c(0, N), ylim=c(1e-5, 1), log="y",
 			 main=paste("Divergences for the Lorenz Map (non-shuffled, rate 0.03s, m = ", m, ", d = ", d, ")."), col="#FFFFFF");
 
 	rgl::plot3d(data);
@@ -118,7 +125,7 @@ lorenz.single = function(data){
 	inBox = inBox & (data[,2] > box.y[1]) & (data[,2] < box.y[2]);
 	inBox = inBox & (data[,3] > box.z[1]) & (data[,3] < box.z[2]);
 	
-	print(inBox[seq(1, 10000, by=97)]);
+	#print(inBox[seq(1, 10000, by=97)]);
 	freq = sum(inBox) / nrow(data);
 
 	print(freq);
@@ -126,10 +133,10 @@ lorenz.single = function(data){
 	result = divergence.plot(data, box.x, box.y, box.z,
 							 to=N/2, by=N%/%1000, shuffle=F, smooth=F);
 
-	x = seq(0, max(result[,1]) * 1.1, length=1000);
-	lines(x, sqrt(  (1 / (-2*x)) * log(0.05/2)  ), col=2)
-	lines(x, sqrt(  (1 / (-2*x)) * log(0.001/2)  ), col=3)
-	lines(x, sqrt(  (1 / (-2*x)) * log(1e-10/2)  ), col=4)
+	x = seq(0, N * 1.1, length=1000);
+	lines(x, sqrt(  (1 / (-x)) * log(0.05/2)  ), col=2)
+	lines(x, sqrt(  (1 / (-x)) * log(0.001/2)  ), col=3)
+	lines(x, sqrt(  (1 / (-x)) * log(1e-10/2)  ), col=4)
 
 	legend("topright", c(expression(eta == 0.05), expression(eta == 0.001), expression(eta == 1e-10)), col=c(2, 3, 4), lwd=1)
 	legend("topleft", "the probability to exceed the\ncolored lines is at most eta");
@@ -138,7 +145,7 @@ lorenz.single = function(data){
 	result;
 }
 
-lorenz.all = function(data, divisions=10){
+simulate = function(data, divisions=6, name="Lorenz"){
 	N = nrow(data);
 	m = 3;
 	d = 3;
@@ -147,12 +154,14 @@ lorenz.all = function(data, divisions=10){
 	yrange = range(data[,2]);
 	zrange = range(data[,3]);
 
-	plot(0, 1, xlab="size of each half", ylab="histogram divergence", type="l", xlim=c(0, N/2), ylim=c(1e-6, 1), log="y",
-			 main=paste("Divergences for the Lorenz Map (non-shuffled, rate 0.03s, m = ", m, ", d = ", d, ")."), col="#FFFFFF");
+	plot(0, 1, xlab="sample size", ylab=expression(paste("divergence", phantom(a), "(", epsilon, ")")), type="l", xlim=c(0, N), ylim=c(1e-6, 1), log="y",
+			 main=paste("Histogram-rule divergences (", name,")", sep=""), col="#FFFFFF");
 
 	for(i in seq(0, divisions-1))
 	for(j in seq(0, divisions-1))
 	for(k in seq(0, divisions-1)){
+		#if( any(c(i, j, k) != c(0, 2, 0)) ) next;
+
 		box.x = min(xrange) + c(i, i+1) * diff(xrange) / divisions;
 		box.y = min(yrange) + c(j, j+1) * diff(yrange) / divisions;
 		box.z = min(zrange) + c(k, k+1) * diff(zrange) / divisions;
@@ -171,30 +180,39 @@ lorenz.all = function(data, divisions=10){
 		inBox = inBox & (data[,2] > box.y[1]) & (data[,2] < box.y[2]);
 		inBox = inBox & (data[,3] > box.z[1]) & (data[,3] < box.z[2]);
 		
-		print(inBox[seq(1, 10000, by=97)]);
+		#print(inBox[seq(1, 10000, by=97)]);
 		freq = sum(inBox) / nrow(data);
 
-		print(freq);
-
-		if(freq == 0)
-			break;
+		#if(freq == 0)
+		print(N / (divisions**3));
+		print(sum(inBox));
+		if(sum(inBox) < N / (divisions**2))
+			next;
 
 		result = divergence.plot(data, box.x, box.y, box.z,
 								 to=N/2, by=N%/%1000, shuffle=F);
 	}
 
-	x = seq(0, max(result[,1]) * 1.1, length=1000);
-	lines(x, sqrt(  (1 / (-2*x)) * log(0.05/2)  ), col=2);
-	lines(x, sqrt(  (1 / (-2*x)) * log(0.001/2)  ), col=3);
-	lines(x, sqrt(  (1 / (-2*x)) * log(1e-10/2)  ), col=4);
+	x = seq(0, N * 1.1, length=1000);
+	lines(x, sqrt(  (1 / (-x)) * log(0.05/2)  ), col=2);
+	lines(x, sqrt(  (1 / (-x)) * log(0.001/2)  ), col=3);
+	lines(x, sqrt(  (1 / (-x)) * log(1e-10/2)  ), col=4);
 
 	legend("topright", c(expression(eta == 0.05), expression(eta == 0.001), expression(eta == 1e-10)), col=c(2, 3, 4), lwd=1);
 	legend("topleft", "the probability to exceed the\ncolored lines is at most eta");
-
-	savePlot("histogram-rule-lorenz.png");
 }
 
-#data = lorenz.real(500000); # 1,500,000 uses up about 60 MB
+data = lorenz.real(40000); # 1,500,000 uses up about 60 MB
 
-#result = lorenz.all(data);
-result = lorenz.single(data);
+#data = logistic(500000); data = embedd(data, m=3, d=1);
+
+#data = read.csv("../../sunspot.csv", sep=";"); data = data[,4]; data = embedd(data, m=3, d=17);
+
+#data = read.csv("../../NOAA-vancouver-clean.csv"); data = data[,"TAVG"]; data = embedd.custom(data, c(1, 2, 365));
+#data = read.csv("../../NOAA-vancouver-clean.csv"); data = data[,"PRCP7"]; data = data[!is.na(data)]; data = data[seq(1, length(data), by=7)]; data = embedd.custom(data, c(1, 2, 365%/%7));
+#data = read.csv("../../NOAA-vancouver-clean.csv"); data = data[,"PRCP7"]; data = data[!is.na(data)]; data = embedd.custom(data, c(1, 2, 365));
+
+result = simulate(data, name="Lorenz", divisions=10);
+#result = lorenz.single(data);
+
+#savePlot("histogram-rule-lorenz.png");
