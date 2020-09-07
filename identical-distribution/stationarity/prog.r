@@ -47,20 +47,23 @@ divergence.plot = function(data, from=20, to=3996, by=5, shuffle=FALSE, main="")
 }
 
 lorenz = function(N=10000, t.step=0.03, recalc=TRUE){
-	t.end = N * t.step;
-
-	if(recalc){
-		mylorenz.ts <<- sim.cont(lorenz.syst, 0, t.end, t.step,
-			 start.x=c(5,5,5), parms=c(10, 28, -8/3), obs.fun = function(x)
-			 x[1]);
-		 #sqrt(sum(x**2)));
-	}
+#	t.end = (N + 1000) * t.step;
+#
+#	if(recalc){
+#		mylorenz.ts <<- sim.cont(lorenz.syst, 0, t.end, t.step,
+#			 start.x=c(5,5,5), parms=c(10, 28, -8/3), obs.fun = function(x)
+#			 x[1]);
+#		 #sqrt(sum(x**2)));
+#	}
+#
+#	writeBin(as.numeric(mylorenz.ts), "lorenz-million.dat", size=8);
 
 	m = 3;
 	d = 3;
+	mylorenz.ts = readBin("lorenz-million.dat", size=8, n=(N+1000), what="numeric"); #n=.Machine$integer.max);
 	data = embedd(mylorenz.ts, m=m, d=d);
 
-	data;
+	data[1:N,];
 }
 
 logistic.map = function(){
@@ -96,7 +99,6 @@ d = 3;
 
 #logistic.map();
 data = lorenz(N, recalc=TRUE); # 1,500,000 uses up about 60 MB
-writeBin(data[,1], "lorenz-million.dat", size=8);
 
 # resample as needed
 #data = data[seq(1, nrow(data), by=5),]
