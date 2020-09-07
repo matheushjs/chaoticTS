@@ -62,7 +62,7 @@ embedd.custom = function(series, indices){
 	result;
 }
 
-divergence.plot = function(data, box.x, box.y, box.z, from=20, to=3996, by=5, shuffle=FALSE, smooth=TRUE){
+divergence.plot = function(data, box.x, box.y, box.z, from=20, to=3996, by=5, shuffle=FALSE, smooth=TRUE, plot=T){
 	result = NULL;
 
 	inBox = (data[,1] > box.x[1]) & (data[,1] < box.x[2]);
@@ -83,11 +83,13 @@ divergence.plot = function(data, box.x, box.y, box.z, from=20, to=3996, by=5, sh
 
 		result = rbind(result, c(i, freq1, freq2, abs(freq1 - freq2)));
 	}
-	if(smooth){
-		sm = smooth.spline(2*result[,1], result[,4], df=30);
-		lines(sm, lwd=2, col="#00007755");
-	} else {
-		lines(2*result[,1], result[,4], lwd=2, col="#000000AA");
+	if(plot){
+		if(smooth){
+			sm = smooth.spline(2*result[,1], result[,4], df=30);
+			lines(sm, lwd=2, col="#00007755");
+		} else {
+			lines(2*result[,1], result[,4], lwd=2, col="#000000AA");
+		}
 	}
 	result;
 }
@@ -145,7 +147,7 @@ lorenz.single = function(data){
 	result;
 }
 
-simulate = function(data, divisions=6, name="Lorenz"){
+simulate = function(data, divisions=6, name="Lorenz", plot.average=F){
 	N = nrow(data);
 	m = 3;
 	d = 3;
@@ -154,9 +156,10 @@ simulate = function(data, divisions=6, name="Lorenz"){
 	yrange = range(data[,2]);
 	zrange = range(data[,3]);
 
-	plot(0, 1, xlab="sample size", ylab=expression(paste("divergence", phantom(a), "(", epsilon, ")")), type="l", xlim=c(0, N), ylim=c(1e-6, 1), log="y",
+	plot(0, 1, xlab="sample size", ylab=expression(paste("divergence", phantom(a), "(", epsilon, ")")), type="l", xlim=c(0, N), ylim=c(1e-5, 1), log="y",
 			 main=paste("Histogram-rule divergences (", name,")", sep=""), col="#FFFFFF");
 
+	avgResult = NULL;
 	for(i in seq(0, divisions-1))
 	for(j in seq(0, divisions-1))
 	for(k in seq(0, divisions-1)){
@@ -189,20 +192,42 @@ simulate = function(data, divisions=6, name="Lorenz"){
 		if(sum(inBox) < N / (divisions**2))
 			next;
 
-		result = divergence.plot(data, box.x, box.y, box.z,
+		if(plot.average){
+			result = divergence.plot(data, box.x, box.y, box.z,
+								 to=N/2, by=N%/%1000, shuffle=F, plot=F);
+
+			if(is.null(avgResult)){
+				avgResult = result[,c(1, 4)];
+			} else {
+				avgResult[,2] = (avgResult[,2] + result[,4]) / 2;
+			}
+		} else {
+			result = divergence.plot(data, box.x, box.y, box.z,
 								 to=N/2, by=N%/%1000, shuffle=F);
+		}
+	}
+
+	if(plot.average){
+		lines(2*avgResult[,1], avgResult[,2], lwd=2, col="#00007755");
+	}
+
+	epsilon = function(eta, x){
+		sqrt(
+			 log(2*eta) / (-2*x/2) # Divide by two cuz of half-samples
+		) / 2;
 	}
 
 	x = seq(0, N * 1.1, length=1000);
-	lines(x, sqrt(  (1 / (-x)) * log(0.05/2)  ), col=2);
-	lines(x, sqrt(  (1 / (-x)) * log(0.001/2)  ), col=3);
-	lines(x, sqrt(  (1 / (-x)) * log(1e-10/2)  ), col=4);
+	lines(x, epsilon(0.05, x), col=2);
+	lines(x, epsilon(0.001, x), col=3);
+	lines(x, epsilon(1e-10, x), col=4);
+	lines(x, epsilon(0.2, x), col=5);
 
-	legend("topright", c(expression(eta == 0.05), expression(eta == 0.001), expression(eta == 1e-10)), col=c(2, 3, 4), lwd=1);
+	legend("topright", c(expression(eta == 0.05), expression(eta == 0.001), expression(eta == 1e-10), expression(eta == 0.2)), col=c(2, 3, 4, 5), lwd=1);
 	legend("topleft", "the probability to exceed the\ncolored lines is at most eta");
 }
 
-data = lorenz.real(40000); # 1,500,000 uses up about 60 MB
+data = lorenz.real(80000); # 1,500,000 uses up about 60 MB
 
 #data = logistic(500000); data = embedd(data, m=3, d=1);
 
@@ -212,7 +237,7 @@ data = lorenz.real(40000); # 1,500,000 uses up about 60 MB
 #data = read.csv("../../NOAA-vancouver-clean.csv"); data = data[,"PRCP7"]; data = data[!is.na(data)]; data = data[seq(1, length(data), by=7)]; data = embedd.custom(data, c(1, 2, 365%/%7));
 #data = read.csv("../../NOAA-vancouver-clean.csv"); data = data[,"PRCP7"]; data = data[!is.na(data)]; data = embedd.custom(data, c(1, 2, 365));
 
-result = simulate(data, name="Lorenz", divisions=10);
+result = simulate(data, name="Lorenz", divisions=10, plot.average=T);
 #result = lorenz.single(data);
 
 #savePlot("histogram-rule-lorenz.png");
