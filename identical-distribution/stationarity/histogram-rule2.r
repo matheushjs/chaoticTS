@@ -48,4 +48,23 @@ lorenz.embedded = function(N=1000, m=3, d=3, t.step=0.03){
 	data;
 }
 
+norm1 = function(vec){ sum(abs(vec)); }
+norm2 = function(vec){ sqrt(sum(vec**2)); }
+normInf = function(vec){ max(abs(vec)); }
+
+embedd.custom = function(series, indices){
+	subseries = list();
+	for(l in indices){
+		subseries[[length(subseries) + 1]] = series[l:length(series)];
+	}
+
+	minLength = length(series) - max(indices);
+	result = NULL;
+	for(i in 1:length(subseries)){
+		result = cbind(result, subseries[[i]][1:minLength] );
+	}
+
+	result;
+}
+
 
