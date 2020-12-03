@@ -67,4 +67,89 @@ embedd.custom = function(series, indices){
 	result;
 }
 
+divergence.plot = function(data, box.x, box.y, box.z, from=20, to=3996, by=5, shuffle=FALSE, smooth=TRUE, plot=T){
+	result = NULL;
+
+	inBox = (data[,1] > box.x[1]) & (data[,1] < box.x[2]);
+	inBox = inBox & (data[,2] > box.y[1]) & (data[,2] < box.y[2]);
+	inBox = inBox & (data[,3] > box.z[1]) & (data[,3] < box.z[2]);
+	
+	if(shuffle){
+		data = data[sample(1:nrow(data)),];
+	}
+
+	for(i in seq(from, to, by=by)){
+		nrows = nrow(data);
+		half1 = inBox[1:i];
+		half2 = inBox[(i+1):(2*i)];
+
+		freq1 = sum(half1) / length(half1);
+		freq2 = sum(half2) / length(half2);
+
+		result = rbind(result, c(i, freq1, freq2, abs(freq1 - freq2)));
+	}
+	if(plot){
+		if(smooth){
+			sm = smooth.spline(2*result[,1], result[,4], df=30);
+			lines(sm, lwd=2, col="#00007755");
+		} else {
+			lines(2*result[,1], result[,4], lwd=2, col="#000000AA");
+		}
+	}
+	result;
+}
+
+lorenz.single = function(data){
+	N = nrow(data);
+	m = 3;
+	d = 3;
+
+	xrange = range(data[,1]);
+	yrange = range(data[,2]);
+	zrange = range(data[,3]);
+
+	#xrange = c(-19.11338, 19.1377);
+	#yrange = c(-19.11338, 19.1377);
+	#zrange = c(-19.11338, 19.1377); # Yes they're all equal
+
+	# Real lorenz system
+	#xrange = c(5.3, 14.1);
+	#yrange = c(11.25, 19.3);
+	#zrange = c(16.5, 24.35);
+
+	n = 2;
+	box.x = min(xrange) + (c(n-3, n) + 1) * diff(xrange) / 10;
+	box.y = min(yrange) + (c(n-3, n) + 3) * diff(yrange) / 10;
+	box.z = min(zrange) + (c(n-3, n) + 7) * diff(zrange) / 10;
+
+	plot(0, 1, xlab="Sample size", ylab=expression(paste(list(histogram,divergence), phantom(aaa), epsilon, phantom(aaa))), type="l", xlim=c(0, N), ylim=c(1e-5, 1), #log="y",
+			 main=paste("Divergences for the Lorenz Map (non-shuffled, rate 0.03s, m = ", m, ", d = ", d, ")."), col="#FFFFFF");
+
+	rgl::plot3d(data);
+	rgl::lines3d(t(rbind(box.x, box.y, box.z)), col=2, lwd=3);
+
+	inBox = (data[,1] > box.x[1]) & (data[,1] < box.x[2]);
+	inBox = inBox & (data[,2] > box.y[1]) & (data[,2] < box.y[2]);
+	inBox = inBox & (data[,3] > box.z[1]) & (data[,3] < box.z[2]);
+	
+	#print(inBox[seq(1, 10000, by=97)]);
+	freq = sum(inBox) / nrow(data);
+
+	print(freq);
+
+	result = divergence.plot(data, box.x, box.y, box.z,
+							 to=N/2, by=N%/%1000, shuffle=F, smooth=F);
+
+	x = seq(0, N * 1.1, length=1000);
+	lines(x, sqrt(  (1 / (-x)) * log(0.05/2)  ), col=2)
+	lines(x, sqrt(  (1 / (-x)) * log(0.001/2)  ), col=3)
+	lines(x, sqrt(  (1 / (-x)) * log(1e-10/2)  ), col=4)
+
+	legend("topright", c(expression(eta == 0.05), expression(eta == 0.001), expression(eta == 1e-10)), col=c(2, 3, 4), lwd=1)
+	legend("topleft", "the probability to exceed the\ncolored lines is at most eta");
+
+	#savePlot("histogram-rule-lorenz.png");
+	result;
+}
+
 
